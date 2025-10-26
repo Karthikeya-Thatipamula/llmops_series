@@ -1,0 +1,128 @@
+UNDERSTANDING AGENTIC AI
+Definition
+Agentic AI refers to systems that act autonomously to pursue objectives in environments by perceiving inputs, planning sequences of actions, and executing those actions. Unlike single-turn or purely reactive models, agentic systems maintain state, set sub-goals, chain multiple steps, and can manage decision-making, tool use, and iterative refinement of outputs.
+Core Capabilities
+Perception & Input Handling
+Ingests multi-modal inputs (text, structured data, files, API responses).
+Normalizes and encodes inputs into internal representations.
+Planning & Reasoning
+Breaks a top-level task into sub-tasks.
+Generates plans, evaluates alternatives, and sequences actions.
+Performs iterative refinement using feedback loops.
+Tooling & Action Execution
+Calls external tools and APIs (search, code execution, DB queries).
+Reads/writes files, uses calculators, or interacts with web services.
+Manages side effects with retries, error handling, and rollbacks.
+Memory & State Management
+Stores short-term state for a session and long-term memory for recurring context.
+Uses memory to inform future decisions and personalization.
+Monitoring & Meta-Reasoning
+Tracks performance metrics and action histories.
+Self-assesses uncertainty and requests clarification or human oversight when needed.
+Architectural Component
+Controller / Orchestrator
+Drives the agent loop: sense -> plan -> act -> observe.
+Decides when to call LLMs vs. tools, and routes data between components.
+Planner (High-level LLM)
+Produces task decomposition and high-level strategy.
+Often a chain-of-thought or structured prompt that outputs steps.
+Executor (Low-level LLM or Modules)
+Implements atomic actions: fetch this, compute that, synthesize text.
+Interfaces with tools via adapters.
+Tool Adapters
+Encapsulate external APIs and ensure inputs/outputs follow expected schemas.
+Provide validation, rate-limit handling, and standardized error formats.
+Memory Store
+Fast retrieval store (local session) and persistent store (user profiles, logs).
+Implements retrieval-augmented reasoning (RAG) with similarity search.
+Logger & Observability
+Records prompts, actions, tool calls, responses, latencies, errors.
+Enables replay, debugging, and compliance audits.
+Safety & Policy Layer
+Validates proposed actions against constraints, policies, and guardrails.
+Intercepts unsafe or disallowed operations.
+Agent Types & Patterns
+Reactive Agent
+Quick input -> output mapping, minimal planning.
+Use-case: simple Q&A, transformers as stateless responders.
+Deliberative Agent
+Heavy planning and multi-step reasoning before action.
+Use-case: complex workflows, multi-step content generation.
+Hybrid Agent
+Uses reactive steps for simple tasks and deliberative planning for complex ones.
+Common in production: balances latency and quality.
+Multi-agent Systems
+Multiple specialized agents coordinate (e.g., retriever, planner, verifier).
+Use-case: modular pipelines, role-based responsibilities.
+Typical Agent Loop
+Receive input and context.
+Retrieve relevant memory/documents (RAG).
+Planner proposes steps and tool calls.
+Executor runs steps, invoking tools when necessary.
+Observe results and update internal state/memory.
+If needed, loop back to step 3 for refinement.
+Produce final output and log the session.
+RAG (Retrieval-Augmented Generation) in Agentic Systems
+Purpose: Ground generation on external, up-to-date, or domain-specific documents.
+Flow: Query → retrieve top-k documents → construct context (with filtering & scoring) → call LLM with context → generate answer.
+Important to include provenance (which docs were used) and confidence indicators.
+Safety, Ethics, and Governance
+Principle of Least Privilege: Tools and APIs should be permissioned and limited.
+Human-in-the-loop: Escalate high-risk decisions to human reviewers.
+Transparency: Log rationale, data sources, and any deterministic rules applied.
+Privacy: Mask or avoid storing PII; apply encryption and access controls.
+Bias & Fairness: Monitor outputs for demographic skew and harmful content.
+Auditability: Maintain immutable logs for compliance and incident forensics.
+Evaluation Metrics
+Task completion rate and success by intent.
+Response correctness (fact-checking, provenance matching).
+Latency and resource utilization.
+Safety incidents and rate of escalations.
+User satisfaction and feedback.
+Robustness to adversarial or malformed inputs.
+Prompting Patterns & Engineering Tips
+Role Prompting — define roles: "You are a planning agent that outputs numbered steps".
+Stepwise Decomposition — ask the model to list steps before actions.
+Tool-use Protocols — standardize how the LLM calls a tool (JSON schema for inputs/outputs).
+Verification Step — after generating an answer, have a verifier agent re-check key facts.
+Fail-soft Strategies — return partial results and clear error states rather than crash.
+Temperature & Determinism — use low temperature for deterministic planning; higher for creativity.
+Logging Recommendations (for RAG + Agentic AI)
+Log raw prompts, structured plans, tool calls (with args), tool responses, and final outputs.
+Tag logs with timestamps, user IDs (pseudonymized), and session IDs.
+Store retrieval hits with similarity scores and doc IDs to enable provenance tracing.
+Maintain separate secure logs for sensitive actions and access audits.
+Common Pitfalls & Anti-patterns
+Over-trusting LLM outputs: always verify actions that cause side effects.
+Context bloat: including too many documents in RAG context can increase hallucination.
+Tight coupling of tools and planners: keep clear interfaces for easier testing and replacement.
+Silent failures: never swallow tool errors—expose and handle them gracefully.
+Example Minimal JSON Tool-Call Protocol
+"tool": "search_api",
+"input": {
+"query": "latest firmware for device X",
+"max_results": 5
+},
+"expected_output_schema": {
+"results": [
+{"title": "string", "url": "string", "snippet": "string", "score": "float"}
+]
+}
+Best Practices for Modular RAG + Agent Implementation
+Separate concerns: retriever, ranker, planner, executor, verifier, logger each as modules.
+Unit-test each tool adapter with mocked responses.
+Use a small deterministic LLM configuration for planning; keep heavy generation separate.
+Implement a verification/consensus agent for high-stakes outputs (e.g., compare two models).
+Provide human fallback and clear user-facing messaging for partial completions.
+Quick Examples (Short)
+Example task: "Book a flight from B to C under $200 next Wednesday."
+Retriever: check calendar constraints, user's saved preferences.
+Planner: list steps: search flights, filter, select, confirm pricing, book.
+Executor: call flight-search tool, call payment tool with masked payment token.
+Verifier: confirm booking ID and email user.
+Example task: "Summarize these 10 PDFs and extract action items."
+Retriever: fetch top sections from each PDF.
+Planner: propose per-document summaries then a consolidated action list.
+Executor: run extraction tool, dedupe items, present prioritized action items.
+Closing Note
+Agentic AI is powerful but introduces additional complexity in orchestration, safety, and observability compared to single-turn LLM use. Aim for modular design, strong logging and provenance, and clear safety boundaries. For RAG-based agents, make retrieval quality, prompt engineering, and verification central parts of the pipeline.
